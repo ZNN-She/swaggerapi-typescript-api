@@ -49,19 +49,20 @@ async function createApi(options) {
     const methods = Object.keys(pathItem);
 
     methods.forEach((method) => {
-      const isHaveParameters = swaagerDocPaths[path][method].parameters; // 是否有参数
-      const parametersType = isHaveParameters ? swaagerDocPaths[path][method].parameters[0].in : null;
       const isResult = swaagerDocPaths[path][method].responses['200']?.schema; // 是否有返回结果
       const originalRef = swaagerDocPaths[path][method].responses['200']?.schema?.originalRef;
       const $ref = swaagerDocPaths[path][method].responses['200']?.schema?.$ref;
 
       let paramsStr = '';
-      if (isHaveParameters) {
+      if (swaagerDocPaths[path][method].parameters && swaagerDocPaths[path][method].parameters[0]?.schema?.$ref) {
+        let swaagerDocDefinitionsKey = swaagerDocPaths[path][method].parameters[0].schema.$ref.split('/').pop()
+        paramsStr = `\nparameters: definitions['${swaagerDocDefinitionsKey}']\n`
+      }else if(swaagerDocPaths[path][method].parameters){
+        const parametersType = swaagerDocPaths[path][method]?.parameters[0].in;
         paramsStr = `\nparameters: operations['${interfacePath[path][method]}']['parameters']['${parametersType}']\n`
       }
 
       let resultStr = swaagerDocPaths[path][method].responses['200']?.schema?.type || 'unknown';
-
       if (isResult) {
         if (originalRef) {
           resultStr = swaagerDocDefinitions[originalRef].properties.data ? `definitions['${originalRef}']['data']` : `definitions['${originalRef}']`
@@ -71,8 +72,7 @@ async function createApi(options) {
         }
       }
 
-
-      if (isHaveParameters) {
+      if (paramsStr.length) {
         apiStr = apiStr + `\nexport const ${apiKey}_${method} = (${paramsStr}): Promise<${resultStr}> => axiosInstance.${method}('${path}', getParams(parameters));\n`
       } else {
         apiStr = apiStr + `\nexport const ${apiKey}_${method} = (${paramsStr}): Promise<${resultStr}> => axiosInstance.${method}('${path}');\n`
