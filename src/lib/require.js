@@ -49,26 +49,40 @@ async function createApi(options) {
     const methods = Object.keys(pathItem);
 
     methods.forEach((method) => {
-      const isResult = swaagerDocPaths[path][method].responses['200']?.schema; // 是否有返回结果
-      const originalRef = swaagerDocPaths[path][method].responses['200']?.schema?.originalRef;
-      const $ref = swaagerDocPaths[path][method].responses['200']?.schema?.$ref;
 
+      // 参数
       let paramsStr = '';
       if (swaagerDocPaths[path][method].parameters && swaagerDocPaths[path][method].parameters[0]?.schema?.$ref) {
         let swaagerDocDefinitionsKey = swaagerDocPaths[path][method].parameters[0].schema.$ref.split('/').pop()
         paramsStr = `\nparameters: definitions['${swaagerDocDefinitionsKey}']\n`
-      }else if(swaagerDocPaths[path][method].parameters){
+      } else if (swaagerDocPaths[path][method].parameters) {
         const parametersType = swaagerDocPaths[path][method]?.parameters[0].in;
         paramsStr = `\nparameters: operations['${interfacePath[path][method]}']['parameters']['${parametersType}']\n`
       }
 
-      let resultStr = swaagerDocPaths[path][method].responses['200']?.schema?.type || 'unknown';
+      // 返回结果
+      const isResult = swaagerDocPaths[path][method].responses['200']?.schema; // 是否有返回结果
+      let resultStr = 'unknown';
       if (isResult) {
-        if (originalRef) {
-          resultStr = swaagerDocDefinitions[originalRef].properties.data ? `definitions['${originalRef}']['data']` : `definitions['${originalRef}']`
-        } else if ($ref) {
-          let swaagerDocDefinitionsKey = $ref.split('/').pop()
-          resultStr = swaagerDocDefinitions[swaagerDocDefinitionsKey].properties.data ? `definitions['${swaagerDocDefinitionsKey}']['data']` : `definitions['${swaagerDocDefinitionsKey}']`
+        const resultType = swaagerDocPaths[path][method].responses['200']?.schema?.type;
+        if (resultType === 'array') {
+          const originalRef = swaagerDocPaths[path][method].responses['200']?.schema?.items?.originalRef;
+          const $ref = swaagerDocPaths[path][method].responses['200']?.schema?.items?.$ref;
+          if (originalRef) {
+            resultStr = swaagerDocDefinitions[originalRef].properties.data ? `definitions['${originalRef}']['data'][]` : `definitions['${originalRef}'][]`
+          } else if ($ref) {
+            let swaagerDocDefinitionsKey = $ref.split('/').pop()
+            resultStr = swaagerDocDefinitions[swaagerDocDefinitionsKey].properties.data ? `definitions['${swaagerDocDefinitionsKey}']['data'][]` : `definitions['${swaagerDocDefinitionsKey}'][]`
+          }
+        } else {
+          const originalRef = swaagerDocPaths[path][method].responses['200']?.schema?.originalRef;
+          const $ref = swaagerDocPaths[path][method].responses['200']?.schema?.$ref;
+          if (originalRef) {
+            resultStr = swaagerDocDefinitions[originalRef].properties.data ? `definitions['${originalRef}']['data']` : `definitions['${originalRef}']`
+          } else if ($ref) {
+            let swaagerDocDefinitionsKey = $ref.split('/').pop()
+            resultStr = swaagerDocDefinitions[swaagerDocDefinitionsKey].properties.data ? `definitions['${swaagerDocDefinitionsKey}']['data']` : `definitions['${swaagerDocDefinitionsKey}']`
+          }
         }
       }
 
