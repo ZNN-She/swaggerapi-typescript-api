@@ -1,0 +1,21 @@
+{
+  "name": "swaggerapi-typescript-api",
+  "private": false,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "chalk": "^3.0.0-beta.2",
+    "lodash": "^4.17.21",
+    "openapi-typescript": "^5.4.1",
+    "shelljs": "^0.8.5",
+    "stream": "^0.0.2"
+  },
+  "main": "src/lib/index.js",
+  "files": [
+    "src"
+  ]
+}
